@@ -1,0 +1,33 @@
+<form id="webm-overlay-form">
+    <div class="overlay-select-container">
+        <select class="select-video">
+            <option value="" disabled selected>{{localize "WEBM.SelectPlaceholder"}}</option>
+            {{#each videos}}
+                <option value="{{this}}">{{this}}</option>
+            {{/each}}
+        </select>
+        <button type="button" class="start-overlay" title="{{localize "WEBM.StartOverlay"}}">
+            <i class="fas fa-play"></i>
+        </button>
+    </div>
+
+    <div class="active-overlays-container">
+        {{#if (eq activeOverlays.length 0)}}
+            <span>{{localize "WEBM.NoOverlay"}}</span>
+        {{else}}
+            <div class="overlay-list">
+                {{#each activeOverlays}}
+                    <label class="overlay-item">
+                        <input type="checkbox" data-overlay="{{this}}" class="select-overlay">
+                        <span>{{this}}</span>
+                    </label>
+                {{/each}}
+            </div>
+        {{/if}}
+    </div>
+
+    <div class="control-buttons">
+        <button type="button" class="stop-selected-overlay">{{localize "WEBM.StopSelected"}}</button>
+        <button type="button" class="stop-all-overlays">{{localize "WEBM.StopAll"}}</button>
+    </div>
+</form>

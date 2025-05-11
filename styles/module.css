@@ -1,0 +1,121 @@
+.webm-overlay {
+    opacity: 1; /* Ensure videos are initially visible */
+    z-index: 99; /* Base z-index for overlays */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    object-fit: cover; /* Ensures the video covers the entire screen while maintaining its aspect ratio */
+    mix-blend-mode: screen; /* Makes black pixels transparent */
+    background-color: transparent; /* Ensures the background is transparent */
+}
+
+#webm-overlay-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    z-index: 100; /* Higher z-index for the form to be above overlays */
+}
+
+#webm-overlay-form .overlay-select-container {
+    flex: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+#webm-overlay-form .overlay-select-container select {
+    flex: 1;
+    width: 100%;
+}
+
+#webm-overlay-form .overlay-select-container button {
+    flex: 0;
+}
+
+#webm-overlay-form .active-overlays-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+#webm-overlay-form .overlay-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#webm-overlay-form .overlay-item {
+    display: flex;
+    align-items: center;
+    text-align: left;
+    justify-content: space-between;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f1f1f1;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+#webm-overlay-form .overlay-item:hover {
+    background-color: #e1e1e1;
+}
+
+#webm-overlay-form .overlay-item input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+#webm-overlay-form .overlay-item span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#webm-overlay-form .control-buttons {
+    flex: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+
+#webm-overlay-form .control-buttons button {
+    flex: 1;
+    line-height: 1.2;
+}
+
+/* Fade-in and Fade-out animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 1s forwards;
+}
+
+.fade-out {
+    animation: fadeOut 1s forwards;
+}

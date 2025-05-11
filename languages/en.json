@@ -1,3 +1,7 @@
 {
-    "MODULE.hello": "hello"
+    "WEBM.SelectPlaceholder": "Select a video...",
+    "WEBM.StartOverlay": "Start Overlay",
+    "WEBM.NoOverlay": "No overlay currently launched",
+    "WEBM.StopSelected": "Stop Selected Overlay",
+    "WEBM.StopAll": "Stop All Overlays"
 }
