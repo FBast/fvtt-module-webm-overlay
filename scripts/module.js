@@ -45,7 +45,6 @@ Hooks.once('init', async () => {
 
 // Ready Hook
 Hooks.once('ready', async () => {
-    await loadCSS(`modules/${MODULE_ID}/css/styles.css`);
     await initializeActiveOverlays();
 });
 
