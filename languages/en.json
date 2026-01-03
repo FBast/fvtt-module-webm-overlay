@@ -3,5 +3,12 @@
     "WEBM.StartOverlay": "Start Overlay",
     "WEBM.NoOverlay": "No overlay currently launched",
     "WEBM.StopSelected": "Stop Selected Overlay",
-    "WEBM.StopAll": "Stop All Overlays"
+    "WEBM.StopAll": "Stop All Overlays",
+    "WEBM.IntensityLabel": "Overlay intensity",
+    "WEBM.IntensityHint": "100%: opaque + audio | 0%: transparent + muted",
+    "WEBM.AddOverlay": "Add overlay to list",
+    "WEBM.PlayOverlay": "Play overlay",
+    "WEBM.StopOverlay": "Stop overlay",
+    "WEBM.PlayOnceLabel": "Play once (do not loop)",
+    "WEBM.DeleteAll": "Delete all overlays"
 }

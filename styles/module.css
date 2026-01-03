@@ -37,6 +37,59 @@
     flex: 0;
 }
 
+#webm-overlay-form .overlay-list .overlay-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#webm-overlay-form .overlay-item.playing {
+    border-color: #4caf50;
+    background: #e8f5e9;
+}
+
+#webm-overlay-form .overlay-name {
+    flex: 1;
+}
+
+#webm-overlay-form .overlay-actions {
+    display: flex;
+    gap: 6px;
+}
+
+#webm-overlay-form .overlay-actions button {
+    width: 32px;
+}
+
+#webm-overlay-form .overlay-intensity-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#webm-overlay-form .overlay-playonce-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#webm-overlay-form .overlay-intensity-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#webm-overlay-form .overlay-intensity-control input[type="range"] {
+    flex: 1;
+}
+
+#webm-overlay-form .overlay-intensity-value {
+    width: 40px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
 #webm-overlay-form .active-overlays-container {
     flex: 1;
     display: flex;

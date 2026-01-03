@@ -6,28 +6,65 @@
                 <option value="{{this}}">{{this}}</option>
             {{/each}}
         </select>
-        <button type="button" class="start-overlay" title="{{localize "WEBM.StartOverlay"}}">
-            <i class="fas fa-play"></i>
+        <button type="button" class="add-overlay" title="{{localize "WEBM.AddOverlay"}}">
+            <i class="fas fa-plus"></i>
         </button>
     </div>
 
+    <div class="overlay-intensity-row">
+        <label for="overlay-intensity">{{localize "WEBM.IntensityLabel"}}</label>
+        <div class="overlay-intensity-control">
+            <input id="overlay-intensity" class="overlay-intensity" type="range" min="0" max="100" value="{{intensity}}">
+            <span class="overlay-intensity-value">{{intensity}}%</span>
+        </div>
+        <small class="overlay-intensity-hint">{{localize "WEBM.IntensityHint"}}</small>
+    </div>
+
+    <div class="overlay-playonce-row">
+        <label>
+            <input type="checkbox" class="play-once" {{#if playOnce}}checked{{/if}}>
+            {{localize "WEBM.PlayOnceLabel"}}
+        </label>
+    </div>
+
     <div class="active-overlays-container">
-        {{#if (eq activeOverlays.length 0)}}
-            <span>{{localize "WEBM.NoOverlay"}}</span>
-        {{else}}
+        {{#if overlays.length}}
             <div class="overlay-list">
-                {{#each activeOverlays}}
-                    <label class="overlay-item">
-                        <input type="checkbox" data-overlay="{{this}}" class="select-overlay">
-                        <span>{{this}}</span>
-                    </label>
+                {{#each overlays}}
+                    {{#if active}}
+                        <div class="overlay-item playing" data-overlay="{{name}}">
+                            <span class="overlay-name">{{name}}</span>
+                            <div class="overlay-actions">
+                                <button type="button" class="play-overlay" data-overlay="{{name}}" title="{{localize "WEBM.PlayOverlay"}}" disabled>
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button type="button" class="stop-overlay" data-overlay="{{name}}" title="{{localize "WEBM.StopOverlay"}}">
+                                    <i class="fas fa-stop"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {{else}}
+                        <div class="overlay-item" data-overlay="{{name}}">
+                            <span class="overlay-name">{{name}}</span>
+                            <div class="overlay-actions">
+                                <button type="button" class="play-overlay" data-overlay="{{name}}" title="{{localize "WEBM.PlayOverlay"}}">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button type="button" class="stop-overlay" data-overlay="{{name}}" title="{{localize "WEBM.StopOverlay"}}" disabled>
+                                    <i class="fas fa-stop"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {{/if}}
                 {{/each}}
             </div>
+        {{else}}
+            <span>{{localize "WEBM.NoOverlay"}}</span>
         {{/if}}
     </div>
 
     <div class="control-buttons">
-        <button type="button" class="stop-selected-overlay">{{localize "WEBM.StopSelected"}}</button>
         <button type="button" class="stop-all-overlays">{{localize "WEBM.StopAll"}}</button>
+        <button type="button" class="delete-overlays">{{localize "WEBM.DeleteAll"}}</button>
     </div>
 </form>
