@@ -2,38 +2,83 @@ import {
     MODULE_ID,
     SETTING_VIDEO_DIR,
     getActiveOverlays,
+    getSavedOverlays,
+    getOverlayIntensity,
+    getPlayOnce,
     setActiveOverlays,
+    setSavedOverlays,
+    setOverlayIntensity,
+    setPlayOnce,
+    applyOverlayIntensity,
     startOverlay,
     stopOverlay,
     stopAllOverlays
 } from "./helpers.js";
 
-export class OverlayForm extends FormApplication {
+const HandlebarsMixin = foundry?.applications?.api?.HandlebarsApplicationMixin ?? null;
+const ApplicationV2 =
+    foundry?.applications?.api?.ApplicationV2 ??
+    foundry?.applications?.forms?.ApplicationV2 ??
+    null;
+
+const useV2 = Boolean(HandlebarsMixin && ApplicationV2);
+const BaseFormApplication = useV2 ? HandlebarsMixin(ApplicationV2) : FormApplication;
+
+const TEMPLATE_PATH = `modules/${MODULE_ID}/templates/overlay-form.hbs`;
+
+export class OverlayForm extends BaseFormApplication {
     static _instance = null;
 
     constructor(object, options) {
         super(object, options);
-        this.selectedActiveOverlays = new Set();
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        const base =
+            BaseFormApplication.DEFAULT_OPTIONS ??
+            BaseFormApplication.defaultOptions ??
+            super.defaultOptions ??
+            {};
+        const shared = {
             id: "webm-overlay-form",
+            window: { title: "WebM Overlay Controls" },
             title: "WebM Overlay Controls",
-            template: `modules/${MODULE_ID}/templates/overlay-form.hbs`,
             width: 300,
-            height: 'auto',
+            height: "auto",
             closeOnSubmit: false,
             resizable: true
+        };
+
+        if (useV2) {
+            return foundry.utils.mergeObject(base, {
+                ...shared,
+                tag: "form",
+                form: { submitOnChange: false, closeOnSubmit: false },
+                parts: {
+                    body: { template: TEMPLATE_PATH }
+                }
+            });
+        }
+
+        return foundry.utils.mergeObject(base, {
+            ...shared,
+            template: TEMPLATE_PATH
         });
     }
 
-    async getData() {
+    static PARTS = useV2
+        ? {
+            body: { template: TEMPLATE_PATH }
+        }
+        : undefined;
+
+    async _gatherContext() {
         const videoDirectory = game.settings.get(MODULE_ID, SETTING_VIDEO_DIR);
         let videoFiles = [];
 
         try {
-            const result = await FilePicker.browse("data", videoDirectory);
+            const picker = foundry.applications?.apps?.FilePicker?.implementation || FilePicker;
+            const result = await picker.browse("data", videoDirectory);
             videoFiles = result.files
                 .filter(file => file.endsWith('.webm'))
                 .map(file => file.split('/').pop());
@@ -41,18 +86,56 @@ export class OverlayForm extends FormApplication {
             console.error("WebM Overlay | Error fetching video files:", error);
         }
 
+        const active = getActiveOverlays();
+        const saved = new Set(getSavedOverlays());
+        active.forEach(a => saved.add(a));
+
         return {
             videos: videoFiles,
-            activeOverlays: getActiveOverlays()
+            overlays: Array.from(saved).map(name => ({
+                name,
+                active: active.includes(name)
+            })),
+            intensity: getOverlayIntensity(),
+            playOnce: getPlayOnce()
         };
     }
 
+    async getData() {
+        if (useV2) return this._gatherContext();
+        return this._gatherContext();
+    }
+
+    async _prepareContext() {
+        return this._gatherContext();
+    }
+
     activateListeners(html) {
-        super.activateListeners(html);
-        html.find('.start-overlay').click(this._onStartOverlay.bind(this));
-        html.find('.select-overlay').click(this._onSelectActiveOverlay.bind(this));
-        html.find('.stop-selected-overlay').click(this._onStopSelectedOverlay.bind(this));
-        html.find('.stop-all-overlays').click(this._onStopAllOverlays.bind(this));
+        console.log("WebM Overlay | activateListeners", { html, useV2 });
+        super.activateListeners?.(html);
+        const $html = html instanceof jQuery ? html : $(html);
+        $html.find('.add-overlay').on('click', this._onAddOverlay.bind(this));
+        $html.find('.play-overlay').on('click', this._onPlayOverlay.bind(this));
+        $html.find('.stop-overlay').on('click', this._onStopOverlay.bind(this));
+        $html.find('.stop-all-overlays').on('click', this._onStopAllOverlays.bind(this));
+        $html.find('.delete-overlays').on('click', this._onDeleteOverlays.bind(this));
+        $html.find('.overlay-intensity').on('input change', this._onChangeIntensity.bind(this));
+        $html.find('.play-once').on('change', this._onChangePlayOnce.bind(this));
+    }
+
+    _attachListeners(html) {
+        this.activateListeners(html);
+    }
+
+    async _onRender(context, options) {
+        // V2 does not auto-run activateListeners the same way; ensure we bind.
+        await super._onRender?.(context, options);
+        if (useV2) {
+            const root = this.element ?? options?.element ?? null;
+            if (root) {
+                this.activateListeners(root);
+            }
+        }
     }
 
     static show() {
@@ -67,59 +150,75 @@ export class OverlayForm extends FormApplication {
         return super.close(options);
     }
 
-    async _onStartOverlay(event) {
+    async _onAddOverlay(event) {
         event.preventDefault();
-
-        const videoFileName = this.element.find('.select-video').val();
+        const videoFileName = this._root().find('.select-video').val();
         if (!videoFileName) return;
 
-        const activeOverlays = getActiveOverlays();
-        if (activeOverlays.includes(videoFileName)) {
-            ui.notifications.warn(`Overlay is already active: ${videoFileName}`);
-            return;
+        const saved = getSavedOverlays();
+        if (!saved.includes(videoFileName)) {
+            saved.push(videoFileName);
+            await setSavedOverlays(saved);
+            this.render();
+        } else {
+            ui.notifications.info(`Overlay already in list: ${videoFileName}`);
         }
+    }
 
-        startOverlay(videoFileName);
-        game.socket.emit(`module.${MODULE_ID}`, { action: 'startOverlay', videoFileName });
+    async _onPlayOverlay(event) {
+        event.preventDefault();
+        const videoFileName = $(event.currentTarget).data('overlay');
+        const root = this._root();
+        const intensity = Number(root.find('.overlay-intensity').val()) || 0;
+        const playOnce = Boolean(root.find('.play-once').prop('checked'));
 
-        activeOverlays.push(videoFileName);
-        await setActiveOverlays(activeOverlays);
+        const payload = { action: 'startOverlay', videoFileName, intensity, playOnce };
+        if (window.webmOverlayHandleSocket) window.webmOverlayHandleSocket(payload);
+        // Always emit so other clients receive it (no GM check; non-GM can initiate too)
+        game.socket.emit(`module.${MODULE_ID}`, payload);
         this.render();
     }
 
-    _onSelectActiveOverlay(event) {
-        const overlayFileName = $(event.currentTarget).data('overlay');
-        if (event.currentTarget.checked) {
-            this.selectedActiveOverlays.add(overlayFileName);
-        } else {
-            this.selectedActiveOverlays.delete(overlayFileName);
-        }
-    }
-
-    async _onStopSelectedOverlay(event) {
+    async _onStopOverlay(event) {
         event.preventDefault();
-
-        const activeOverlays = getActiveOverlays().filter(
-            overlay => !this.selectedActiveOverlays.has(overlay)
-        );
-
-        this.selectedActiveOverlays.forEach(fileName => {
-            stopOverlay(fileName);
-            game.socket.emit(`module.${MODULE_ID}`, { action: 'stopOverlay', videoFileName: fileName });
-        });
-
-        this.selectedActiveOverlays.clear();
-        await setActiveOverlays(activeOverlays);
+        const videoFileName = $(event.currentTarget).data('overlay');
+        const payload = { action: 'stopOverlay', videoFileName };
+        if (window.webmOverlayHandleSocket) window.webmOverlayHandleSocket(payload);
+        game.socket.emit(`module.${MODULE_ID}`, payload);
         this.render();
     }
 
     async _onStopAllOverlays(event) {
         event.preventDefault();
 
-        stopAllOverlays();
-        game.socket.emit(`module.${MODULE_ID}`, { action: 'stopAllOverlays' });
-
-        await setActiveOverlays([]);
+        const payload = { action: 'stopAllOverlays' };
+        if (window.webmOverlayHandleSocket) window.webmOverlayHandleSocket(payload);
+        game.socket.emit(`module.${MODULE_ID}`, payload);
         this.render();
+    }
+
+    async _onDeleteOverlays(event) {
+        event.preventDefault();
+        const payload = { action: 'deleteOverlays', names: getSavedOverlays() };
+        if (window.webmOverlayHandleSocket) window.webmOverlayHandleSocket(payload);
+        game.socket.emit(`module.${MODULE_ID}`, payload);
+        this.render();
+    }
+
+    async _onChangeIntensity(event) {
+        const value = Number(event.currentTarget.value) || 0;
+        await setOverlayIntensity(value);
+        this._root().find('.overlay-intensity-value').text(`${value}%`);
+        document.querySelectorAll('video.webm-overlay').forEach(video => applyOverlayIntensity(video, value));
+    }
+
+    async _onChangePlayOnce(event) {
+        const value = Boolean(event.currentTarget.checked);
+        await setPlayOnce(value);
+    }
+
+    _root() {
+        const el = this.element ?? null;
+        return el instanceof jQuery ? el : $(el);
     }
 }
